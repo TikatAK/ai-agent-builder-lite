@@ -1,21 +1,18 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from contextlib import asynccontextmanager
 import logging
-from typing import Optional
 
 from app.core.config import settings
-from app.core.database import engine, Base
+from app.core.database import engine, Base, init_db
 from app.api.v1 import api_router
-from app.core.middleware import RequestLoggingMiddleware
-from app.core.logging import setup_logging
 
 # 设置日志
-setup_logging()
+logging.basicConfig(
+    level=getattr(logging, settings.LOG_LEVEL),
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
-
-security = HTTPBearer()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -23,17 +20,14 @@ async def lifespan(app: FastAPI):
     # 启动时
     logger.info("Starting AI Agent Builder Lite API...")
     
-    # 创建数据库表
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    
-    logger.info("Database tables created successfully")
+    # 初始化数据库
+    await init_db()
+    logger.info("Database initialized successfully")
     
     yield
     
     # 关闭时
     logger.info("Shutting down AI Agent Builder Lite API...")
-    await engine.dispose()
 
 def create_application() -> FastAPI:
     """创建FastAPI应用实例"""
@@ -56,22 +50,8 @@ def create_application() -> FastAPI:
         allow_headers=["*"],
     )
     
-    # 添加请求日志中间件
-    if settings.LOG_REQUESTS:
-        app.add_middleware(RequestLoggingMiddleware)
-    
     # 包含API路由
     app.include_router(api_router, prefix="/api/v1")
-    
-    # 健康检查端点
-    @app.get("/health")
-    async def health_check():
-        return {
-            "status": "healthy",
-            "service": "ai-agent-builder-lite",
-            "version": "0.1.0",
-            "environment": settings.ENVIRONMENT,
-        }
     
     # 根端点
     @app.get("/")
