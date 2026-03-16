@@ -25,7 +25,7 @@ import {
   Code,
   Bot
 } from "lucide-react"
-import AgentFlow from "@/components/agent/AgentFlow"
+import AgentFlowEnhanced from "@/components/agent/AgentFlowEnhanced"
 import SkillLibrary from "@/components/agent/SkillLibrary"
 import PreviewPanel from "@/components/agent/PreviewPanel"
 
@@ -254,7 +254,7 @@ export default function CreateAgentPage() {
 
               {/* 流程设计标签页 */}
               <TabsContent value="flow">
-                <AgentFlow />
+                <AgentFlowEnhanced />
               </TabsContent>
             </Tabs>
           </div>
